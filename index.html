@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de Corrida - Táxi do Felipe</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCciv-1Q-3tDiNQGa4lNO7NNuB2Nlj19A0&libraries=places"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .form-container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo { max-width: 300px; height: auto; }
+        .step { display: none; }
+        .step.active { display: block; }
+        input, button, select { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .prev-btn { background-color: #f44336; }
+        .prev-btn:hover { background-color: #da190b; }
+        #childDetails { margin-top: 10px; display: none; }
+        #extraDestinations { margin: 15px 0; }
+        .extra-destination { background: #f9f9f9; padding: 12px; margin: 12px 0; border-radius: 6px; border: 1px solid #ddd; }
+        .extra-destination input { margin-bottom: 8px; }
+        .remove-btn { background: #d32f2f; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-size: 14px; width: auto; }
+        .remove-btn:hover { background: #b71c1c; }
+        #addDestinationBtn { background: #2196F3; margin: 12px 0; }
+        footer { text-align: center; margin-top: 30px; font-size: 0.9em; color: #555; }
+        footer a { color: #4CAF50; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+        .benefits-section { max-width: 600px; margin: 40px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .benefits-section h2 { text-align: center; color: #333; margin-bottom: 25px; }
+        .benefits-list { list-style: none; padding: 0; }
+        .benefits-list li { margin: 15px 0; padding-left: 35px; position: relative; font-size: 1.05em; line-height: 1.5; }
+        .benefits-list li::before { content: "✔"; position: absolute; left: 0; color: #4CAF50; font-size: 1.4em; font-weight: bold; }
+        .highlight { color: #d32f2f; font-weight: bold; }
+        .bagagem-group { display: flex; flex-wrap: wrap; gap: 15px; }
+        .bagagem-group > div { flex: 1 1 30%; min-width: 180px; }
+        .section-divider { border-top: 2px solid #eee; margin: 25px 0 15px; }
+        .section-divider h4 { text-align: center; color: #555; margin: 0; background: white; padding: 0 15px; display: inline-block; position: relative; top: -12px; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="logo-container">
+            <img src="http://taxidofelipe.com.br/wp-content/uploads/2025/12/Gemini_Generated_Image_ximcwtximcwtximc-removebg-preview.png" 
+                 alt="Táxi do Felipe - Logo" class="logo">
+        </div>
+
+        <h2>Solicite uma Corrida - Táxi do Felipe</h2>
+        <form id="rideForm">
+            <div class="step active" id="step1">
+                <label for="name">Nome:</label>
+                <input type="text" id="name" required>
+                <button type="button" onclick="nextStep(2)">Próximo</button>
+            </div>
+
+            <div class="step" id="step2">
+                <label for="phone">Telefone (com código do país, ex: +5511999999999):</label>
+                <input type="tel" id="phone" placeholder="+55 11 99999-9999 ou +5511999999999" required>
+                <small>Digite o número completo, incluindo o código do país (+55 para Brasil, +1 para EUA, etc.)</small>
+                <button type="button" class="prev-btn" onclick="prevStep(1)">Anterior</button>
+                <button type="button" onclick="nextStep(3)">Próximo</button>
+            </div>
+
+            <div class="step" id="step3">
+                <label for="date">Data da Corrida (DD/MM/AAAA):</label>
+                <input type="text" id="date" placeholder="Ex: 25/12/2025" required>
+                <button type="button" class="prev-btn" onclick="prevStep(2)">Anterior</button>
+                <button type="button" onclick="nextStep(4)">Próximo</button>
+            </div>
+
+            <div class="step" id="step4">
+                <label for="time">Horário da Corrida (HH:MM):</label>
+                <input type="text" id="time" placeholder="Ex: 14:30" required>
+                <button type="button" class="prev-btn" onclick="prevStep(3)">Anterior</button>
+                <button type="button" onclick="nextStep(5)">Próximo</button>
+            </div>
+
+            <div class="step" id="step5">
+                <label for="pickup">Endereço de Partida:</label>
+                <input type="text" id="pickup" required>
+                <button type="button" class="prev-btn" onclick="prevStep(4)">Anterior</button>
+                <button type="button" onclick="nextStep(6)">Próximo</button>
+            </div>
+
+            <div class="step" id="step6">
+                <label for="dropoff">Endereço de Destino Principal:</label>
+                <input type="text" id="dropoff" required>
+
+                <button type="button" id="addDestinationBtn">+ Adicionar outro destino</button>
+
+                <div id="extraDestinations"></div>
+
+                <label>
+                    <input type="checkbox" id="airportService"> Serviço de receptivo no aeroporto (Adicional R$50)
+                </label>
+
+                <button type="button" class="prev-btn" onclick="prevStep(5)">Anterior</button>
+                <button type="button" onclick="nextStep(7)">Próximo</button>
+            </div>
+
+            <div class="step" id="step7">
+                <h3>Informações de Passageiros e Bagagens</h3>
+
+                <label for="adultPassengers">Quantidade de passageiros adultos:</label>
+                <input type="number" id="adultPassengers" min="1" value="1" required>
+
+                <label for="childPassengers">Quantidade de crianças:</label>
+                <input type="number" id="childPassengers" min="0" value="0" required>
+
+                <div id="childDetails">
+                    <label>
+                        <input type="checkbox" id="childSeat"> Deseja cadeirinha infantil? (Adicional fixo R$40 por viagem)
+                    </label>
+                    <div style="margin-top: 10px;">
+                        <label for="childInfo">Detalhes das crianças (idades):</label>
+                        <input type="text" id="childInfo" placeholder="Ex: 2 crianças, 3 e 5 anos">
+                    </div>
+                </div>
+
+                <div class="section-divider">
+                    <h4>Bagagens</h4>
+                </div>
+
+                <div class="bagagem-group">
+                    <div>
+                        <label for="smallBags">Pequenas (ex: mochila, bolsa):</label>
+                        <input type="number" id="smallBags" min="0" value="0">
+                    </div>
+                    <div>
+                        <label for="mediumBags">Médias (ex: mala de mão):</label>
+                        <input type="number" id="mediumBags" min="0" value="0">
+                    </div>
+                    <div>
+                        <label for="largeBags">Grandes (ex: mala de viagem):</label>
+                        <input type="number" id="largeBags" min="0" value="0">
+                    </div>
+                </div>
+
+                <button type="button" class="prev-btn" onclick="prevStep(6)">Anterior</button>
+                <button type="button" onclick="submitForm()">Enviar</button>
+            </div>
+        </form>
+
+        <footer>
+            <p>Visite nosso site: <a href="https://www.taxidofelipe.com.br">www.taxidofelipe.com.br</a></p>
+            <p>CNPJ: 57.324.021/0001-80</p>
+        </footer>
+    </div>
+
+    <!-- Seção de benefícios -->
+    <section class="benefits-section">
+        <h2>Por que escolher o Táxi do Felipe?</h2>
+        <ul class="benefits-list">
+            <li><strong>Pontualidade garantida</strong> – Chegamos no horário combinado, sem surpresas. Ideal para compromissos importantes e voos.</li>
+            <li><strong>Receptivo no aeroporto incluso</strong> – Motorista com placa personalizada esperando você na chegada (GRU, CGH, VCP e outros). Sem fila, sem estresse.</li>
+            <li><strong>Veículos confortáveis e limpos</strong> – Ar-condicionado, bancos espaçosos, Wi-Fi disponível e porta-malas amplo para bagagens.</li>
+            <li><strong>Segurança em primeiro lugar</strong> – Motoristas experientes, veículos revisados e rastreados. Viagem tranquila do início ao fim.</li>
+            <li><strong>Atendimento personalizado</strong> – Cadeirinha infantil disponível, múltiplos destinos no mesmo pedido e flexibilidade total.</li>
+            <li><strong>Preço justo e transparente</strong> – Sem taxas surpresa. Adicionais claros e valores competitivos.</li>
+            <li><strong>Reserva com antecedência</strong> – Planeje sua corrida com calma e garanta o melhor atendimento.</li>
+            <li><strong>Atendimento rápido via WhatsApp</strong> – Recebemos sua solicitação instantaneamente e confirmamos em minutos.</li>
+        </ul>
+        <p style="text-align: center; margin-top: 30px; font-weight: bold; font-size: 1.1em;">
+            Viaje com conforto, segurança e tranquilidade. <span class="highlight">Táxi do Felipe: o seu melhor caminho!</span>
+        </p>
+    </section>
+
+    <script>
+        function nextStep(step) {
+            document.querySelector('.step.active').classList.remove('active');
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        function prevStep(step) {
+            document.querySelector('.step.active').classList.remove('active');
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        let extraDestinations = [];
+
+        function addExtraDestination() {
+            const container = document.getElementById('extraDestinations');
+            const index = extraDestinations.length;
+
+            const div = document.createElement('div');
+            div.className = 'extra-destination';
+            div.innerHTML = `
+                <label>Destino adicional ${index + 1}:</label>
+                <input type="text" id="extraDest${index}" placeholder="Endereço adicional">
+                <button type="button" class="remove-btn" onclick="removeExtraDestination(${index})">Remover</button>
+            `;
+            container.appendChild(div);
+
+            new google.maps.places.Autocomplete(document.getElementById(`extraDest${index}`), {
+                componentRestrictions: { country: 'br' }
+            }).setFields(['formatted_address']);
+
+            extraDestinations.push(index);
+        }
+
+        function removeExtraDestination(index) {
+            const elem = document.getElementById(`extraDest${index}`)?.parentElement;
+            if (elem) elem.remove();
+            extraDestinations = extraDestinations.filter(i => i !== index);
+        }
+
+        function isAirport(text) {
+            const lower = (text || '').toLowerCase();
+            return lower.includes('aeroporto') ||
+                   lower.includes('airport') ||
+                   lower.includes('gru') ||
+                   lower.includes('cgh') ||
+                   lower.includes('guarulhos') ||
+                   lower.includes('congonhas') ||
+                   lower.includes('viracopos') ||
+                   lower.includes('vcp') ||
+                   lower.includes('santos dumont') ||
+                   lower.includes('sd');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const childPassengersInput = document.getElementById('childPassengers');
+
+            const toggleChildDetails = () => {
+                const numChildren = parseInt(childPassengersInput.value) || 0;
+                document.getElementById('childDetails').style.display = (numChildren > 0) ? 'block' : 'none';
+            };
+
+            childPassengersInput.addEventListener('input', toggleChildDetails);
+            toggleChildDetails();
+
+            const autocompleteOptions = {
+                componentRestrictions: { country: 'br' }
+            };
+
+            const pickupAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('pickup'), 
+                autocompleteOptions
+            );
+            pickupAutocomplete.setFields(['formatted_address']);
+
+            const dropoffAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('dropoff'), 
+                autocompleteOptions
+            );
+            dropoffAutocomplete.setFields(['formatted_address']);
+
+            // Sugestão para destino quando detectado como aeroporto
+            dropoffAutocomplete.addListener('place_changed', function() {
+                const place = dropoffAutocomplete.getPlace();
+                const address = place?.formatted_address || document.getElementById('dropoff').value;
+                
+                if (isAirport(address)) {
+                    alert('Parece que o destino é um aeroporto!\n\n' +
+                          'Oferecemos o serviço de **receptivo no aeroporto** por apenas R$ 50 adicionais:\n' +
+                          '• Motorista com placa personalizada na área de desembarque\n' +
+                          '• Sem fila de táxi\n' +
+                          '• Ajuda com bagagens\n\n' +
+                          'Se desejar esse serviço, marque a opção abaixo ↓\n' +
+                          'Caso contrário, pode deixar desmarcado.');
+                }
+            });
+
+            // Sugestão para origem (opcional – apenas informativo)
+            pickupAutocomplete.addListener('place_changed', function() {
+                const place = pickupAutocomplete.getPlace();
+                const address = place?.formatted_address || document.getElementById('pickup').value;
+                
+                if (isAirport(address)) {
+                    alert('Parece que a origem é um aeroporto!\n\n' +
+                          'Se precisar de ajuda com o ponto exato de embarque ou alguma informação especial, ' +
+                          'pode nos avisar depois de enviar a solicitação.');
+                }
+            });
+
+            document.getElementById('addDestinationBtn').addEventListener('click', addExtraDestination);
+        });
+
+        function submitForm() {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const date = document.getElementById('date').value.trim();
+            const time = document.getElementById('time').value.trim();
+            const pickup = document.getElementById('pickup').value.trim();
+            const mainDropoff = document.getElementById('dropoff').value.trim();
+            const airportService = document.getElementById('airportService').checked;
+            const adultPassengers = document.getElementById('adultPassengers').value.trim();
+            const childPassengers = document.getElementById('childPassengers').value.trim();
+            const childSeat = document.getElementById('childSeat').checked;
+            const childInfo = document.getElementById('childInfo').value.trim();
+            const smallBags = document.getElementById('smallBags').value.trim() || '0';
+            const mediumBags = document.getElementById('mediumBags').value.trim() || '0';
+            const largeBags = document.getElementById('largeBags').value.trim() || '0';
+
+            if (!name || !phone || !date || !time || !pickup || !mainDropoff || !adultPassengers) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            let destinations = [mainDropoff];
+            extraDestinations.forEach(idx => {
+                const val = document.getElementById(`extraDest${idx}`)?.value?.trim();
+                if (val) destinations.push(val);
+            });
+
+            let message = `Solicitação de Corrida - Táxi do Felipe\n\n` +
+                          `Nome: ${name}\n` +
+                          `Telefone: ${phone}\n` +
+                          `Data: ${date}\n` +
+                          `Horário: ${time}\n` +
+                          `Partida: ${pickup}\n` +
+                          `Destinos:\n`;
+
+            destinations.forEach((dest, i) => message += `  ${i + 1}. ${dest}\n`);
+
+            message += `\nPassageiros:\n` +
+                       `Adultos: ${adultPassengers}\n` +
+                       `Crianças: ${childPassengers}\n`;
+
+            if (parseInt(childPassengers) > 0 && childSeat) {
+                message += `Cadeirinha infantil: Sim${childInfo ? ' - ' + childInfo : ''} (Adicional fixo R$40 por viagem)\n`;
+            }
+
+            if (airportService) message += `Serviço receptivo no aeroporto: Sim (Adicional R$50)\n`;
+
+            message += `\nBagagens:\n` +
+                       `Pequenas: ${smallBags}\n` +
+                       `Médias: ${mediumBags}\n` +
+                       `Grandes: ${largeBags}\n`;
+
+            const whatsappNumber = '5511950002992';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+            window.open(whatsappUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
